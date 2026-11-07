@@ -1,0 +1,5 @@
+# Optional extras. Install only what you need.
+MetaTrader5>=5.0.45      # MT5 live data + execution (Windows, official package)
+yfinance>=0.2.40         # extra free historical source
+matplotlib>=3.7          # equity-curve plots
+pytest>=7.4              # test runner

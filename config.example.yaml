@@ -1,0 +1,183 @@
+# fxdesk example configuration.
+# Copy to config.yaml and edit. Environment variables are expanded as ${VAR}
+# or ${VAR:-default}.
+
+account:
+  currency: USD
+  initial_balance: 10000
+
+# Approximate quote-currency -> account-currency conversion for cross pairs
+# such as EURGBP or GBPJPY. Update these when your account currency is not USD
+# or when rates move significantly.
+pip_value_rates:
+  USD: 1.0
+  EUR: 1.08
+  GBP: 1.27
+  JPY: 0.0067
+  CHF: 1.12
+  CAD: 0.74
+  AUD: 0.66
+  NZD: 0.61
+
+data:
+  cache_dir: data_cache
+  cache_ttl_hours: 24
+  max_bars: 20000
+
+  # Providers are tried in order. Missing API keys simply skip that provider.
+  providers:
+    - mt5
+    - twelvedata
+    - alphavantage
+    - yahoo
+    - dukascopy
+    - frankfurter
+    - stooq
+
+  provider_order_intraday:
+    - mt5
+    - twelvedata
+    - alphavantage
+    - yahoo
+    - dukascopy
+
+  provider_order_daily:
+    - mt5
+    - yahoo
+    - twelvedata
+    - alphavantage
+    - frankfurter
+    - stooq
+
+  api_keys:
+    twelvedata: ${TWELVEDATA_API_KEY:-}
+    alphavantage: ${ALPHAVANTAGE_API_KEY:-}
+
+  # Dukascopy downloads one HTTP request per hour. Keep ranges modest.
+  dukascopy_max_days: 45
+  dukascopy_workers: 8
+
+# Native MT5 integration. Leave login/password/server empty to attach to the
+# already-running terminal. symbol_suffix is appended to symbols, e.g. ".a".
+mt5:
+  path: null
+  login: null
+  password: null
+  server: null
+  symbol_suffix: ""
+  timeout_ms: 60000
+  # Broker adapter options used by fxdesk.brokers.mt5.MT5Broker.
+  deviation_points: 20          # max slippage in points
+  magic: 20260101               # order magic number
+  filling: auto                 # auto | fok | ioc | return
+
+# MT4 file bridge. Point this at the terminal's MQL4/Files/fxdesk folder.
+# See bridge/FxDeskBridge.mq4 and README for setup.
+mt4:
+  bridge_dir: "C:/Users/YOU/AppData/Roaming/MetaQuotes/Terminal/XXXXXXXX/MQL4/Files/fxdesk"
+  timeout_seconds: 10
+  symbol_suffix: ""
+
+risk:
+  risk_per_trade: 0.01          # 1% of equity per trade
+  max_open_positions: 3
+  min_risk_reward: 1.5
+  max_spread_pips: 2.0
+  max_daily_loss_pct: 3.0
+  min_lot: 0.01
+  lot_step: 0.01
+  max_lot: 50.0
+
+backtest:
+  initial_balance: 10000
+  spread_pips: 1.0
+  commission_per_lot: 7.0       # round-turn, account currency
+  slippage_pips: 0.2
+  swap_pips_per_day: 0.0        # positive = cost
+  allow_short: true
+  one_position_per_symbol: true
+  warmup_bars: 250
+  close_at_end: true
+  monte_carlo_iterations: 0     # >0 adds a bootstrap distribution to reports
+
+  # Optional session/volatility cost model. Omit the block (or set
+  # enabled: false) to keep the fixed spread/slippage values above.
+  cost_model:
+    enabled: false
+    # Multipliers by UTC hour; ranges may wrap, e.g. "22-2".
+    session_spread_multipliers:
+      "0-6": 1.5
+      "6-12": 1.0
+      "12-16": 0.9
+      "16-21": 1.0
+      "21-24": 1.3
+    session_slippage_multipliers:
+      "0-6": 1.5
+      "22-2": 1.8
+    volatility_spread_mult: 0.0   # spread += mult * (ATR / pip)
+    volatility_slippage_mult: 0.0
+    max_spread_pips: 5.0
+    max_slippage_pips: 2.0
+
+walkforward:
+  train_bars: 1000
+  test_bars: 250
+  step_bars: 250
+  min_train_trades: 3
+  objective: sharpe             # sharpe | sortino | expectancy | profit_factor | total_return | calmar
+  max_combinations: 250
+  # Optional per-strategy overrides of the built-in parameter grids.
+  param_grid: {}
+
+paper:
+  poll_seconds: 15
+  slippage_pips: 0.2
+  spread_pips: 1.0              # used when no live broker quote is available
+  quote_timeframe: 1m
+  commission_per_lot: 0.0
+  initial_balance: 10000
+  state_file: paper_state.json
+
+signals:
+  lookback_bars: 500
+  max_plans: 10
+  synthetic_spread_pips: 1.0
+
+strategies:
+  trend_ma:
+    fast: 20
+    slow: 50
+    trend: 200
+    atr_period: 14
+    atr_mult: 2.0
+    rr: 2.0
+    adx_period: 14
+    adx_min: 20                 # only take trend trades when ADX >= 20
+  breakout:
+    lookback: 20
+    trend: 200
+    atr_period: 14
+    atr_mult: 2.0
+    rr: 2.0
+    adx_period: 14
+    adx_min: 20
+  mean_reversion:
+    bb_period: 20
+    bb_std: 2.0
+    rsi_period: 14
+    rsi_low: 30
+    rsi_high: 70
+    atr_period: 14
+    atr_mult: 1.5
+    rr: 1.5
+    adx_period: 14
+    adx_max: 25                 # only fade when the market is not trending
+  composite:
+    min_score: 0.6
+    strategies: [trend_ma, breakout, mean_reversion]
+    atr_period: 14
+    atr_mult: 2.0
+    rr: 2.0
+
+# Optional per-broker symbol overrides (digits, pip_size, contract_size).
+symbols: {}

@@ -1,0 +1,22 @@
+{
+  "name": "fxdesk-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Node BFF and static host for the fxdesk dashboard",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "install:all": "npm install && npm --prefix ../ui install",
+    "ui:dev": "npm --prefix ../ui run dev",
+    "ui:build": "npm --prefix ../ui run build",
+    "ui:preview": "npm --prefix ../ui run preview"
+  },
+  "dependencies": {
+    "@fastify/static": "^8.0.3",
+    "fastify": "^5.2.1"
+  }
+}
